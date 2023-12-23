@@ -136,6 +136,32 @@ public class MonsterInspector extends JPanel {
             }
         }
 
+        comboBox.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                value = toString(value);
+                return super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+            }
+
+            private String toString(Object value) {
+                String str = String.valueOf(value);
+                StringBuilder returnValue = new StringBuilder();
+                boolean newWord = true;
+                for (char ch : str.toCharArray()) {
+                    if (ch == '_') {
+                        newWord = true;
+                        returnValue.append(' ');
+                    } else if (newWord) {
+                        returnValue.append( Character.toUpperCase(ch) );
+                        newWord = false;
+                    } else {
+                        returnValue.append(Character.toLowerCase(ch));
+                    }
+                }
+                return returnValue.toString();
+            }
+        });
+
         Listener l = new Listener();
         comboBox.addActionListener(l);
         property.addPropertyChangeListener(l);
@@ -156,6 +182,12 @@ public class MonsterInspector extends JPanel {
             gbc.fill = GridBagConstraints.NONE; gbc.anchor = GridBagConstraints.NORTHWEST;
             add(i.getPanel(), gbc);
         }
+
+//        if (label != null)
+//            label.putClientProperty("JComponent.sizeVariant", "small");
+//        if (component != null)
+//            component.putClientProperty("JComponent.sizeVariant", "small");
+
         Inspector inspector = inspectors.get(inspectorIndex);
         if (label != null) {
             inspector.addRow(label, component);
