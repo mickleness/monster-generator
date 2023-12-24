@@ -1,7 +1,11 @@
 package com.pump.monster.ui;
 
+import com.pump.desktop.DefaultAboutRunnable;
+import com.pump.desktop.DesktopApplication;
 import com.pump.desktop.ExitControl;
-import com.pump.desktop.temp.TempFileManager;
+import com.pump.graphics.vector.VectorImage;
+import com.pump.monster.*;
+import com.pump.monster.render.MonsterRenderer;
 import com.pump.plaf.QPanelUI;
 import com.pump.util.JVM;
 
@@ -9,12 +13,22 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.net.URL;
 
 public class MonsterFrame extends JFrame {
+
+    private static final String VERSION = "1.0";
+
     public static void main(String[] args) throws IOException {
         System.setProperty("apple.laf.useScreenMenuBar", "true");
-        TempFileManager.initialize("pump-monster-gen-v1.0");
+
+        DesktopApplication app = new DesktopApplication("com.pump.MonsterGenerator",
+                "Monster Generator", VERSION, "jeremy.wood@mac.com");
+        app.setFrameClass(MonsterFrame.class);
+        app.setCopyright(2023, "Jeremy Wood");
+        app.setURL(new URL("https://github.com/mickleness/monster-generator/"));
 
         SwingUtilities.invokeLater(new Runnable() {
             @Override
@@ -42,7 +56,7 @@ public class MonsterFrame extends JFrame {
     ExportPanel exportPanel = new ExportPanel(doc);
 
     public MonsterFrame() {
-        super("Monster Generator");
+        super("Monster Generator v" + VERSION);
         menuBar.add(fileMenu);
         menuBar.add(editMenu);
         editMenu.add(copyMenuItem);
@@ -99,5 +113,39 @@ public class MonsterFrame extends JFrame {
         gbc.gridx++;
 
         monsterInspector.setUI(QPanelUI.createBoxUI());
+
+        updateTaskbarIcon();
+        updateAboutMenu();
+    }
+
+    private void updateAboutMenu() {
+        if(Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.APP_ABOUT)) {
+            DefaultAboutRunnable aboutRunnable = new DefaultAboutRunnable();
+            Desktop.getDesktop().setAboutHandler(e -> aboutRunnable.run());
+        }
+    }
+
+    private void updateTaskbarIcon() {
+        if (Taskbar.isTaskbarSupported() && Taskbar.getTaskbar().isSupported(Taskbar.Feature.ICON_IMAGE)) {
+            Taskbar.getTaskbar().setIconImage(getMonsterImage());
+        }
+    }
+
+    private BufferedImage getMonsterImage() {
+        Monster monster = new Monster(BodyShape.TRAPEZOID,
+                Monster.ORANGE,
+                Hair.SHAGGY,
+                false,
+                EyeNumber.ONE,
+                EyePlacement.NORMAL,
+                Eyelid.BOTTOM,
+                MouthShape.SMIRK,
+                MouthFill.NONE,
+                Horn.NONE,
+                Legs.NONE );
+        MonsterRenderer renderer = new MonsterRenderer(monster);
+        VectorImage vectorImage = renderer.getImage();
+        BufferedImage bi = vectorImage.toBufferedImage();
+        return bi;
     }
 }
