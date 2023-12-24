@@ -7,6 +7,7 @@ import com.pump.util.JVM;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.io.IOException;
 
@@ -29,7 +30,8 @@ public class MonsterFrame extends JFrame {
     JMenu fileMenu = new JMenu("File");
     JMenu editMenu = new JMenu("Edit");
     JMenuItem rerollMenuItem = new JMenuItem("Reroll");
-    JMenuItem saveImageMenuItem = new JMenuItem("Save Image As\u2026");
+    JMenuItem savePNGMenuItem = new JMenuItem("Save PNG As\u2026");
+    JMenuItem saveSVGMenuItem = new JMenuItem("Save SVG As\u2026");
     JMenuItem copyMenuItem = new JMenuItem("Copy Image");
 
     // TODO: add undo / redo ?
@@ -45,13 +47,16 @@ public class MonsterFrame extends JFrame {
         menuBar.add(editMenu);
         editMenu.add(copyMenuItem);
 
-        fileMenu.add(saveImageMenuItem);
+        fileMenu.add(savePNGMenuItem);
+        fileMenu.add(saveSVGMenuItem);
         fileMenu.add(rerollMenuItem);
         copyMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_C, Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()));
-        saveImageMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()));
+        savePNGMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()));
+        saveSVGMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx() + InputEvent.SHIFT_DOWN_MASK));
         rerollMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()));
         rerollMenuItem.addActionListener(e -> monsterInspector.reroll());
-        saveImageMenuItem.addActionListener(e -> exportPanel.saveImage());
+        savePNGMenuItem.addActionListener(e -> exportPanel.savePNG());
+        saveSVGMenuItem.addActionListener(e -> exportPanel.saveSVG());
         copyMenuItem.addActionListener(e -> exportPanel.copyImage());
         setJMenuBar(menuBar);
 

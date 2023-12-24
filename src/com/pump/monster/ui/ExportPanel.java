@@ -176,7 +176,7 @@ public class ExportPanel extends JPanel {
     /**
      * Show a file dialog to save the current image as a PNG.
      */
-    public void saveImage() {
+    public void savePNG() {
         Frame frame = (Frame) SwingUtilities.getWindowAncestor(this);
         File destFile = FileDialogUtils.showSaveDialog(frame, "Save PNG", "png");
         if (destFile == null)
@@ -184,6 +184,22 @@ public class ExportPanel extends JPanel {
 
         try {
             IOUtils.copy(pngFile, destFile);
+        } catch(IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Show a file dialog to save the current image as an SVG.
+     */
+    public void saveSVG() {
+        Frame frame = (Frame) SwingUtilities.getWindowAncestor(this);
+        File destFile = FileDialogUtils.showSaveDialog(frame, "Save SVG", "svg");
+        if (destFile == null)
+            return;
+
+        try {
+            IOUtils.copy(svgFile, destFile);
         } catch(IOException e) {
             e.printStackTrace();
         }
