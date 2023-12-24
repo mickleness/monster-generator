@@ -1,5 +1,7 @@
 package com.pump.monster.ui;
 
+import com.pump.plaf.QPanelUI;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -24,7 +26,10 @@ public class MonsterFrame extends JFrame {
     JMenu fileMenu = new JMenu("File");
     JMenuItem rerollMenuItem = new JMenuItem("Reroll");
 
-    MonsterInspector inspector = new MonsterInspector();
+    DocumentModel doc = new DocumentModel();
+    MonsterInspector monsterInspector = new MonsterInspector(doc.monster);
+    MonsterPreview monsterPreview = new MonsterPreview(doc.monster);
+    ExportPanel exportPanel = new ExportPanel(doc);
 
     public MonsterFrame() {
         super("Monster Generator");
@@ -34,34 +39,47 @@ public class MonsterFrame extends JFrame {
         rerollMenuItem.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                reroll();
+                monsterInspector.reroll();
             }
         });
         setJMenuBar(menuBar);
 
         getContentPane().setLayout(new GridBagLayout());
 
-        JPanel topLeft = new JPanel(new GridBagLayout());
 
+        JLabel optionsLabel = new JLabel("Options");
+        JLabel exportLabel = new JLabel("Export");
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        gbc.weightx = 1;
-        gbc.weighty = 1;
         gbc.fill = GridBagConstraints.BOTH;
-        getContentPane().add(topLeft, gbc);
-
         gbc.gridx = 0;
         gbc.gridy = 0;
-        gbc.weightx = 0;
-        gbc.weighty = 1;
-        topLeft.add(inspector, gbc);
-        gbc.gridx++;
         gbc.weightx = 1;
-        topLeft.add(inspector.createPreview(), gbc);
-    }
+        gbc.weighty = 1;
+        gbc.gridheight = GridBagConstraints.REMAINDER;
+        gbc.insets = new Insets(3,3,3,3);
+        getContentPane().add(monsterPreview, gbc);
 
-    private void reroll() {
-        inspector.reroll();
+        gbc.gridx++;
+        gbc.weightx = 0; gbc.gridheight = 1; gbc.weighty = 0;
+        gbc.insets = new Insets(20,20,3,20);
+        getContentPane().add(optionsLabel, gbc);
+        gbc.insets = new Insets(3,20,3,20);
+        gbc.gridy++;
+        getContentPane().add(monsterInspector, gbc);
+        gbc.insets = new Insets(20,20,3,20);
+        gbc.gridy++;
+        getContentPane().add(exportLabel, gbc);
+        gbc.gridy++;
+        gbc.insets = new Insets(3,20,20,20);
+        getContentPane().add(exportPanel, gbc);
+        gbc.gridy++; gbc.weighty = 1;
+        gbc.insets = new Insets(0,0,0,0);
+        getContentPane().add(Box.createVerticalBox(), gbc);
+
+        optionsLabel.setLabelFor(monsterInspector);
+
+        gbc.gridx++;
+
+        monsterInspector.setUI(QPanelUI.createBoxUI());
     }
 }

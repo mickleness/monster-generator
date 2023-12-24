@@ -5,6 +5,7 @@ import com.pump.geom.TransformUtils;
 import com.pump.graphics.vector.VectorImage;
 import com.pump.monster.Monster;
 import com.pump.monster.render.MonsterRenderer;
+import com.pump.util.Property;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -13,16 +14,19 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.util.Objects;
 
 public class MonsterPreview extends JComponent {
 
-    private static final String PROPERTY_MONSTER = "monster";
+    final Property<Monster> monsterProperty;
 
-    public MonsterPreview() {
+    public MonsterPreview(Property<Monster> monsterProperty) {
+        this.monsterProperty = Objects.requireNonNull(monsterProperty);
+
         setPreferredSize(new Dimension(200, 200));
         setBorder(new EmptyBorder(4,4,4,4));
 
-        addPropertyChangeListener(PROPERTY_MONSTER, new PropertyChangeListener() {
+        monsterProperty.addPropertyChangeListener(new PropertyChangeListener() {
             @Override
             public void propertyChange(PropertyChangeEvent evt) {
                 repaint();
@@ -33,7 +37,7 @@ public class MonsterPreview extends JComponent {
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
-        Monster monster = getMonster();
+        Monster monster = monsterProperty.getValue();
 
         if (monster == null)
             return;
@@ -56,13 +60,5 @@ public class MonsterPreview extends JComponent {
                 scaledSize.width, scaledSize.height));
         g2.transform(tx);
         vi.paint(g2);
-    }
-
-    public void setMonster(Monster monster) {
-        putClientProperty(PROPERTY_MONSTER, monster);
-    }
-
-    public Monster getMonster() {
-        return (Monster) getClientProperty(PROPERTY_MONSTER);
     }
 }

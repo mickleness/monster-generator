@@ -4,6 +4,7 @@ import com.pump.inspector.Inspector;
 import com.pump.inspector.InspectorRow;
 import com.pump.monster.*;
 import com.pump.util.EnumProperty;
+import com.pump.util.Property;
 
 import javax.swing.*;
 import java.awt.*;
@@ -12,18 +13,13 @@ import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.text.NumberFormat;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.Random;
+import java.util.*;
 
 public class MonsterInspector extends JPanel {
 
     final int ROWS = 6;
 
     static boolean outputCombinations = false;
-
-    public static final String PROPERTY_MONSTER = "monster";
 
     Collection<EnumProperty<?>> properties = new HashSet<>();
 
@@ -41,7 +37,7 @@ public class MonsterInspector extends JPanel {
 
     java.util.List<Inspector> inspectors = new LinkedList<>();
 
-    PropertyChangeListener refreshClientPropertyListener = new PropertyChangeListener() {
+    PropertyChangeListener updateMonsterPCL = new PropertyChangeListener() {
 
         boolean dirty = false;
         Runnable runnable = new Runnable() {
@@ -54,7 +50,7 @@ public class MonsterInspector extends JPanel {
                 Monster monster = new Monster(bodyShape.getValue(), color.getValue(), hair.getValue(), includeTexture.getValue(),
                         eyeNumber.getValue(), eyePlacement.getValue(), eyelid.getValue(), mouthShape.getValue(), mouthFill.getValue(),
                         horn.getValue(), legs.getValue());
-                putClientProperty(PROPERTY_MONSTER, monster);
+                monsterProperty.setValue(monster);
             }
         };
 
@@ -66,9 +62,11 @@ public class MonsterInspector extends JPanel {
     };
 
     JButton rerollButton = new JButton("Reroll");
+    final Property<Monster> monsterProperty;
 
-    public MonsterInspector() {
+    public MonsterInspector(Property<Monster> monsterProperty) {
         super(new GridBagLayout());
+        this.monsterProperty = Objects.requireNonNull(monsterProperty);
 
         // TODO: save properties to preferences across sessions
 
@@ -98,6 +96,10 @@ public class MonsterInspector extends JPanel {
         });
 
         reroll();
+
+        // TODO: when monsterProperty changes, update UI.
+        // Currently this isn't necessary (or testable) because this inspector is the only way to change the monster,
+        // but once we add an undo/redo feature it will be necessary.
     }
 
     /**
@@ -167,7 +169,7 @@ public class MonsterInspector extends JPanel {
         property.addPropertyChangeListener(l);
 
         JLabel label = new JLabel(name + ":");
-        property.addPropertyChangeListener(refreshClientPropertyListener);
+        property.addPropertyChangeListener(updateMonsterPCL);
 
         addToInspector(label, comboBox);
     }
@@ -181,6 +183,7 @@ public class MonsterInspector extends JPanel {
             gbc.gridx = inspectorIndex; gbc.gridy = 0; gbc.weightx = 1; gbc.weighty = 1;
             gbc.fill = GridBagConstraints.NONE; gbc.anchor = GridBagConstraints.NORTHWEST;
             add(i.getPanel(), gbc);
+            i.getPanel().setOpaque(false);
         }
 
 //        if (label != null)
@@ -194,6 +197,7 @@ public class MonsterInspector extends JPanel {
         } else {
             // center in row:
             JPanel p = new JPanel(new GridBagLayout());
+            p.setOpaque(false);
             GridBagConstraints gbc = new GridBagConstraints();
             gbc.gridx = 0; gbc.gridy = 0; gbc.weightx = 1; gbc.weighty = 1; gbc.anchor = GridBagConstraints.CENTER;
             gbc.fill = GridBagConstraints.NONE;
@@ -202,28 +206,10 @@ public class MonsterInspector extends JPanel {
         }
     }
 
-    /**
-     * Create a new MonsterPreview that is bound to this data model.
-     */
-    public MonsterPreview createPreview() {
-        MonsterPreview returnValue = new MonsterPreview();
-
-        PropertyChangeListener pcl = new PropertyChangeListener() {
-            @Override
-            public void propertyChange(PropertyChangeEvent evt) {
-                returnValue.setMonster( (Monster) getClientProperty(PROPERTY_MONSTER));
-            }
-        };
-        addPropertyChangeListener(PROPERTY_MONSTER, pcl);
-        pcl.propertyChange(null);
-        return returnValue;
-    }
-
     public void reroll() {
         for (EnumProperty property : properties) {
             Object initialValue = property.getValues()[random.nextInt(property.getValues().length)];
             property.setValue(initialValue);
         }
-        refreshClientPropertyListener.propertyChange(null);
     }
 }
