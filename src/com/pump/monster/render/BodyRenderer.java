@@ -4,6 +4,7 @@ package com.pump.monster.render;
 import com.pump.awt.HSLColor;
 import com.pump.geom.Clipper;
 import com.pump.geom.MeasuredShape;
+import com.pump.geom.ShapeUtils;
 import com.pump.geom.TransformUtils;
 import com.pump.graphics.Graphics2DContext;
 import com.pump.graphics.vector.*;
@@ -34,97 +35,6 @@ public class BodyRenderer {
         } else {
             return 25;
         }
-    }
-
-    /**
-     * Reverse the path of a Shape. This should have no immediate effect for the user's perception of the shape.
-     * For example, if a circle is drawn clockwise this will render the same circle counter-clockwise.
-     * This can be useful when you need to combine shapes and/or you are interested in specific winding rules.
-     * <p>
-     * TODO: move to ShapeUtils
-     * </p>
-     *
-     * @param shape
-     * @return
-     */
-    public static Path2D reverse(Shape shape) {
-        PathIterator pi = shape.getPathIterator(null);
-        float[] coords = new float[6];
-        float moveX = -1;
-        float moveY = -1;
-        float lastX = -1;
-        float lastY = -1;
-        boolean moved = false;
-        List<Shape> segments = new LinkedList<>();
-        while (!pi.isDone()) {
-            int k = pi.currentSegment(coords);
-            switch (k) {
-                case PathIterator.SEG_MOVETO:
-                    if (moved) {
-                        // feel free to add support if needed
-                        throw new IllegalArgumentException("this method doesn't support shapes with multiple paths");
-                    }
-                    moved = true;
-                    lastX = coords[0];
-                    lastY = coords[1];
-                    break;
-                case PathIterator.SEG_LINETO:
-                    segments.add(0, new Line2D.Float(coords[0], coords[1], lastX, lastY));
-                    lastX = coords[0];
-                    lastY = coords[1];
-                    break;
-                case PathIterator.SEG_QUADTO:
-                    segments.add(0, new QuadCurve2D.Float(coords[2], coords[3], coords[0], coords[1], lastX, lastY));
-                    lastX = coords[2];
-                    lastY = coords[3];
-                    break;
-                case PathIterator.SEG_CUBICTO:
-                    segments.add(0, new CubicCurve2D.Float(coords[4], coords[5], coords[2], coords[3], coords[0], coords[1], lastX, lastY));
-                    lastX = coords[4];
-                    lastY = coords[5];
-                    break;
-                case PathIterator.SEG_CLOSE:
-                    segments.add(0, new Line2D.Float(moveX, moveY, lastX, lastY));
-                    lastX = moveX;
-                    lastY = moveY;
-                    break;
-                default:
-                    throw new IllegalStateException("currentSegment = " + k);
-            }
-
-            pi.next();
-        }
-
-        Path2D returnValue = new Path2D.Float();
-        moved = false;
-        for (Shape segment : segments) {
-            if (segment instanceof Line2D) {
-                Line2D line = (Line2D) segment;
-                if (!moved) {
-                    moved = true;
-                    returnValue.moveTo(line.getX1(), line.getY1());
-                }
-                returnValue.lineTo(line.getX2(), line.getY2());
-            } else if (segment instanceof QuadCurve2D) {
-                QuadCurve2D q = (QuadCurve2D) segment;
-                if (!moved) {
-                    moved = true;
-                    returnValue.moveTo(q.getX1(), q.getY1());
-                }
-                returnValue.quadTo(q.getCtrlX(), q.getCtrlY(), q.getX2(), q.getY2());
-            } else if (segment instanceof CubicCurve2D) {
-                CubicCurve2D c = (CubicCurve2D) segment;
-                if (!moved) {
-                    moved = true;
-                    returnValue.moveTo(c.getX1(), c.getY1());
-                }
-                returnValue.curveTo(c.getCtrlX1(), c.getCtrlY1(), c.getCtrlX2(), c.getCtrlY2(), c.getX2(), c.getY2());
-            } else {
-                throw new IllegalStateException(String.valueOf(segment));
-            }
-        }
-
-        return returnValue;
     }
 
     public static class Quadrilateral {
@@ -204,7 +114,7 @@ public class BodyRenderer {
         ms.getPoint(pathLength, p);
         addDot(returnValue, p, r, 2);
 
-        returnValue.append(reverse(path), false);
+        returnValue.append(ShapeUtils.reverse(path), false);
 
         return returnValue;
     }
@@ -322,7 +232,7 @@ public class BodyRenderer {
 
             Path2D path = new Path2D.Double();
             path.append(left, false);
-            path.append(reverse(right), true);
+            path.append(ShapeUtils.reverse(right), true);
             path.closePath();
             return path;
         }

@@ -1,7 +1,6 @@
 package com.pump.monster.ui;
 
 import com.pump.inspector.Inspector;
-import com.pump.inspector.InspectorRow;
 import com.pump.monster.*;
 import com.pump.util.EnumProperty;
 import com.pump.util.Property;
@@ -14,31 +13,54 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.text.NumberFormat;
 import java.util.*;
+import java.util.function.Function;
 
 public class MonsterInspector extends JPanel {
 
     final int ROWS = 6;
 
-    static boolean outputCombinations = false;
+    /**
+     * How many possible combinations these controls can create
+     */
+    private static long COMBINATIONS = 1;
 
-    Collection<EnumProperty<?>> properties = new HashSet<>();
+    static final Collection<MonsterEnumProperty<?>> ALL_PROPERTIES = new LinkedHashSet<>();
 
-    EnumProperty<BodyShape> bodyShape = new EnumProperty<BodyShape>("Body Shape", BodyShape.values(), BodyShape.CIRCLE);
-    EnumProperty<Color> color = new EnumProperty<Color>("Color", new Color[] {Monster.TEAL, Monster.GREEN, Monster.ORANGE, Monster.PINK, Monster.YELLOW, Monster.PURPLE}, Monster.TEAL);
-    EnumProperty<Hair> hair = new EnumProperty<Hair>("Hair", Hair.values(), Hair.NONE);
-    EnumProperty<Eyelid> eyelid = new EnumProperty<Eyelid>("Eyelid", Eyelid.values(), Eyelid.NONE);
-    EnumProperty<EyeNumber> eyeNumber = new EnumProperty<EyeNumber>("Eye Number", EyeNumber.values(), EyeNumber.ONE);
-    EnumProperty<EyePlacement> eyePlacement = new EnumProperty<EyePlacement>("Eye Placement", EyePlacement.values(), EyePlacement.NORMAL);
-    EnumProperty<MouthShape> mouthShape = new EnumProperty<MouthShape>("Mouth Shape", MouthShape.values(), MouthShape.SMIRK);
-    EnumProperty<MouthFill> mouthFill = new EnumProperty<MouthFill>("Mouth Fill", MouthFill.values(), MouthFill.BLACK);
-    EnumProperty<Horn> horn = new EnumProperty<Horn>("Horn", Horn.values(), Horn.NONE);
-    EnumProperty<Boolean> includeTexture = new EnumProperty<Boolean>("Include Texture", new Boolean[] {Boolean.FALSE, Boolean.TRUE}, Boolean.TRUE);
-    EnumProperty<Legs> legs = new EnumProperty<Legs>("Legs", Legs.values(), Legs.SHORT);
+    static class MonsterEnumProperty<T> extends EnumProperty<T> {
+        Function<Monster, T> retrieveValueFromMonster;
 
+        public MonsterEnumProperty(String propertyName, T[] values, T value, Function<Monster, T> retrieveValueFromMonster) {
+            super(propertyName, values, value);
+            this.retrieveValueFromMonster = Objects.requireNonNull(retrieveValueFromMonster);
+            ALL_PROPERTIES.add(this);
+            COMBINATIONS *= values.length;
+        }
+
+        public T getValue(Monster monster) {
+            return retrieveValueFromMonster.apply(monster);
+        }
+    }
+
+    static final MonsterEnumProperty<BodyShape> bodyShape = new MonsterEnumProperty<>("Body Shape", BodyShape.values(), BodyShape.CIRCLE, monster -> monster.bodyShape);
+    static final MonsterEnumProperty<Color> color = new MonsterEnumProperty<>("Color", new Color[]{Monster.TEAL, Monster.GREEN, Monster.ORANGE, Monster.PINK, Monster.YELLOW, Monster.PURPLE},
+            Monster.TEAL, monster -> monster.bodyColor);
+    static final MonsterEnumProperty<Hair> hair = new MonsterEnumProperty<>("Hair", Hair.values(), Hair.NONE, monster -> monster.hair);
+    static final MonsterEnumProperty<Eyelid> eyelid = new MonsterEnumProperty<>("Eyelid", Eyelid.values(), Eyelid.NONE, monster -> monster.eyelid);
+    static final MonsterEnumProperty<EyeNumber> eyeNumber = new MonsterEnumProperty<>("Eye Number", EyeNumber.values(), EyeNumber.ONE, monster -> monster.eyeNumber);
+    static final MonsterEnumProperty<EyePlacement> eyePlacement = new MonsterEnumProperty<>("Eye Placement", EyePlacement.values(), EyePlacement.NORMAL, monster -> monster.eyePlacement);
+    static final MonsterEnumProperty<MouthShape> mouthShape = new MonsterEnumProperty<>("Mouth Shape", MouthShape.values(), MouthShape.SMIRK, monster -> monster.mouthShape);
+    static final MonsterEnumProperty<MouthFill> mouthFill = new MonsterEnumProperty<>("Mouth Fill", MouthFill.values(), MouthFill.BLACK, monster -> monster.mouthFill);
+    static final MonsterEnumProperty<Horn> horn = new MonsterEnumProperty<>("Horn", Horn.values(), Horn.NONE, monster -> monster.horn);
+    static final MonsterEnumProperty<Boolean> includeTexture = new MonsterEnumProperty<>("Include Texture", new Boolean[]{Boolean.FALSE, Boolean.TRUE}, Boolean.TRUE, monster -> monster.includeTexture);
+    static final MonsterEnumProperty<Legs> legs = new MonsterEnumProperty<>("Legs", Legs.values(), Legs.SHORT, monster -> monster.legs);
+
+    /**
+     * Each element is a column of controls
+     */
     java.util.List<Inspector> inspectors = new LinkedList<>();
+    Map<MonsterEnumProperty, JComboBox> propertyToControlMap = new HashMap<>();
 
     PropertyChangeListener updateMonsterPCL = new PropertyChangeListener() {
-
         boolean dirty = false;
         Runnable runnable = new Runnable() {
             @Override
@@ -47,10 +69,10 @@ public class MonsterInspector extends JPanel {
                     return;
                 dirty = false;
 
-                Monster monster = new Monster(bodyShape.getValue(), color.getValue(), hair.getValue(), includeTexture.getValue(),
+                Monster m = new Monster(bodyShape.getValue(), color.getValue(), hair.getValue(), includeTexture.getValue(),
                         eyeNumber.getValue(), eyePlacement.getValue(), eyelid.getValue(), mouthShape.getValue(), mouthFill.getValue(),
                         horn.getValue(), legs.getValue());
-                monsterProperty.setValue(monster);
+                monster.setValue(m);
             }
         };
 
@@ -62,30 +84,20 @@ public class MonsterInspector extends JPanel {
     };
 
     JButton rerollButton = new JButton("Reroll");
-    final Property<Monster> monsterProperty;
+    final Property<Monster> monster;
 
-    public MonsterInspector(Property<Monster> monsterProperty) {
+    static Random random = new Random();
+
+    public MonsterInspector(Property<Monster> monster) {
         super(new GridBagLayout());
-        this.monsterProperty = Objects.requireNonNull(monsterProperty);
+        this.monster = Objects.requireNonNull(monster);
 
         // TODO: save properties to preferences across sessions
 
-        addProperty(bodyShape);
-        addProperty(color);
-        addProperty(hair);
-        addProperty(eyeNumber);
-        addProperty(eyePlacement);
-        addProperty(eyelid);
-        addProperty(mouthShape);
-        addProperty(mouthFill);
-        addProperty(horn);
-        addProperty(includeTexture);
-        addProperty(legs);
+        for (MonsterEnumProperty p : ALL_PROPERTIES)
+            initializeProperty(p);
 
-        if (!outputCombinations) {
-            outputCombinations = true;
-            System.out.println(NumberFormat.getInstance().format(combinations) + " possible combinations");
-        }
+        System.out.println(NumberFormat.getInstance().format(COMBINATIONS) + " possible combinations");
 
         addToInspector(null, rerollButton);
         rerollButton.addActionListener(new ActionListener() {
@@ -95,25 +107,26 @@ public class MonsterInspector extends JPanel {
             }
         });
 
-        reroll();
+        refreshUIOptionsFromMonster();
+        monster.addPropertyChangeListener(evt -> refreshUIOptionsFromMonster());
 
-        // TODO: when monsterProperty changes, update UI.
-        // Currently this isn't necessary (or testable) because this inspector is the only way to change the monster,
-        // but once we add an undo/redo feature it will be necessary.
+        reroll();
     }
 
-    /**
-     * How many possible combinations these controls can create
-     */
-    private long combinations = 1;
 
-    static Random random = new Random();
+    private void refreshUIOptionsFromMonster() {
+        for (Map.Entry<MonsterEnumProperty, JComboBox> entry : propertyToControlMap.entrySet()) {
+            MonsterEnumProperty p = entry.getKey();
+            Object currentValue = p.getValue(monster.getValue());
+            int i = Arrays.asList(p.getValues()).indexOf(currentValue);
+            entry.getValue().setSelectedIndex(i);
+        }
+    }
 
-    private <T> void addProperty(EnumProperty<T> property) {
-        properties.add(property);
-        combinations *= property.getValues().length;
+    private <T> void initializeProperty(MonsterEnumProperty<T> property) {
         String name = property.getName();
         JComboBox<T> comboBox = new JComboBox<>(property.getValues());
+        propertyToControlMap.put(property, comboBox);
 
         class Listener implements ActionListener, PropertyChangeListener {
 
@@ -147,6 +160,10 @@ public class MonsterInspector extends JPanel {
 
             private String toString(Object value) {
                 String str = String.valueOf(value);
+                if (str.equalsIgnoreCase("true"))
+                    return "Yes";
+                if (str.equalsIgnoreCase("false"))
+                    return "No";
                 StringBuilder returnValue = new StringBuilder();
                 boolean newWord = true;
                 for (char ch : str.toCharArray()) {
@@ -174,8 +191,17 @@ public class MonsterInspector extends JPanel {
         addToInspector(label, comboBox);
     }
 
+    private int currentRow = 0;
+    private int currentColumn = 0;
     private void addToInspector(JComponent label, JComponent component) {
-        int inspectorIndex = (properties.size()-1) / ROWS;
+        int inspectorIndex = currentColumn;
+
+        currentRow++;
+        if (currentRow == ROWS) {
+            currentRow = 0;
+            currentColumn++;
+        }
+
         if (inspectorIndex == inspectors.size()) {
             Inspector i = new Inspector();
             inspectors.add(i);
@@ -207,7 +233,7 @@ public class MonsterInspector extends JPanel {
     }
 
     public void reroll() {
-        for (EnumProperty property : properties) {
+        for (EnumProperty property : ALL_PROPERTIES) {
             Object initialValue = property.getValues()[random.nextInt(property.getValues().length)];
             property.setValue(initialValue);
         }

@@ -1,5 +1,6 @@
 package com.pump.monster.ui;
 
+import com.pump.desktop.temp.TempFileManager;
 import com.pump.plaf.QPanelUI;
 
 import javax.swing.*;
@@ -7,10 +8,12 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.io.IOException;
 
 public class MonsterFrame extends JFrame {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         System.setProperty("apple.laf.useScreenMenuBar", "true");
+        TempFileManager.initialize("pump-monster-gen-v1.0");
 
         SwingUtilities.invokeLater(new Runnable() {
             @Override

@@ -28,6 +28,11 @@ public class Monster {
 
     private int hashcode;
 
+    public Monster() {
+        this(BodyShape.CIRCLE, Monster.PINK, Hair.NONE, false, EyeNumber.ONE, EyePlacement.NORMAL,
+                Eyelid.NONE, MouthShape.GRIN, MouthFill.NONE, Horn.NONE, Legs.NONE);
+    }
+
     public Monster(BodyShape bodyShape, Color bodyColor, Hair hair, boolean includeTexture, EyeNumber eyeNumber, EyePlacement eyePlacement,
                    Eyelid eyelid, MouthShape mouthShape, MouthFill mouthFill, Horn horn, Legs legs) {
         this.bodyShape = hash(bodyShape);

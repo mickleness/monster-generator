@@ -1,18 +1,34 @@
 package com.pump.monster.ui;
 
+import com.pump.awt.dnd.FileLabel;
+import com.pump.desktop.temp.TempFileManager;
+import com.pump.geom.TransformUtils;
 import com.pump.graphics.vector.VectorImage;
 import com.pump.inspector.Inspector;
+import com.pump.io.IOUtils;
 import com.pump.monster.Monster;
 import com.pump.monster.render.MonsterRenderer;
 import com.pump.plaf.QPanelUI;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
+import java.awt.dnd.DnDConstants;
 import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 import java.util.Objects;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class ExportPanel extends JPanel {
+
+    /**
+     * This replaces the PNG/SVG files
+     */
+    private static ExecutorService fileExecutor = Executors.newSingleThreadExecutor();
 
     JLabel widthLabel = new JLabel("Width:");
     JLabel heightLabel = new JLabel("Height:");
@@ -21,6 +37,16 @@ public class ExportPanel extends JPanel {
 
     Inspector inspector = new Inspector();
     final DocumentModel documentModel;
+
+    FileLabel pngLabel = new FileLabel(DnDConstants.ACTION_COPY);
+    FileLabel svgLabel = new FileLabel(DnDConstants.ACTION_COPY);
+    JLabel pngSizeLabel = new JLabel();
+    JLabel svgSizeLabel = new JLabel();
+
+    private boolean filesDirty = false;
+    private VectorImage vectorImage;
+    private File pngFile = new File(TempFileManager.get().getDirectory(), "monster.png");
+    private File svgFile = new File(TempFileManager.get().getDirectory(), "monster.svg");
 
     private float widthToHeightRatio = 0;
 
@@ -32,9 +58,33 @@ public class ExportPanel extends JPanel {
 
         setLayout(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.gridx = 0; gbc.gridy = 0; gbc.weightx = 1; gbc.weighty = 1;
+        gbc.gridx = 0; gbc.gridy = 0; gbc.weightx = 0; gbc.weighty = 1;
         gbc.anchor = GridBagConstraints.WEST;
         add(inspector.getPanel(), gbc);
+
+        JPanel filePanel = new JPanel(new GridBagLayout());
+        gbc.gridx++; gbc.insets.left = 30;
+        add(filePanel, gbc);
+
+        gbc.gridx++; gbc.weightx = 1;
+        add(Box.createHorizontalGlue(), gbc);
+
+        gbc = new GridBagConstraints();
+        gbc.gridx = 0; gbc.gridy = 0; gbc.weightx = 1; gbc.weighty = 1;
+        gbc.insets = new Insets(3,3,3,3);
+        filePanel.add(pngLabel, gbc);
+        gbc.gridy++;
+        filePanel.add(svgLabel, gbc);
+        gbc.gridx++; gbc.gridy--;
+        filePanel.add(pngSizeLabel, gbc);
+        gbc.gridy++;
+        filePanel.add(svgSizeLabel, gbc);
+        filePanel.setOpaque(false);
+
+        Color c = pngSizeLabel.getForeground();
+        c = new Color(c.getRed(), c.getGreen(), c.getBlue(), c.getAlpha() * 80 / 255);
+        pngSizeLabel.setForeground(c);
+        svgSizeLabel.setForeground(c);
 
         QPanelUI ui = new QPanelUI() {
             @Override
@@ -70,29 +120,36 @@ public class ExportPanel extends JPanel {
             }
         };
         inspector.getPanel().setOpaque(false);
-        formatBoxUI(ui);
+        QPanelUI.formatBoxUI(ui);
         setUI(ui);
 
         widthSpinner.getModel().addChangeListener(e -> {
             refreshHeightSpinnerBasedOnWidth();
         });
         heightSpinner.getModel().addChangeListener(e -> {
-            if (widthToHeightRatio != 0) {
-                float height = (Integer) heightSpinner.getModel().getValue();
-                int width = Math.round( widthToHeightRatio * height );
-                documentModel.width.setValue(width);
-            }
+            refreshWidthSpinnerBasedOnHeight();
         });
 
         documentModel.width.addPropertyChangeListener(evt -> widthSpinner.setValue(evt.getNewValue()));
         documentModel.height.addPropertyChangeListener(evt -> heightSpinner.setValue(evt.getNewValue()));
 
         documentModel.monster.addPropertyChangeListener(evt -> {
-            refreshWidthHeightRatio();
+            refreshAfterMonsterUpdate();
         });
 
-        refreshWidthHeightRatio();
+        refreshAfterMonsterUpdate();
         refreshHeightSpinnerBasedOnWidth();
+
+        // make the files exist so their FileIcon looks normal
+        try {
+            pngFile.createNewFile();
+            svgFile.createNewFile();
+        } catch(IOException e) {
+            e.printStackTrace();
+        }
+
+        pngLabel.setFile(pngFile);
+        svgLabel.setFile(svgFile);
     }
 
     private void refreshHeightSpinnerBasedOnWidth() {
@@ -100,32 +157,73 @@ public class ExportPanel extends JPanel {
             float width = (Integer) widthSpinner.getModel().getValue();
             int height = Math.round( width / widthToHeightRatio );
             documentModel.height.setValue(height);
+            queueRefreshFiles();
         }
     }
 
-    private void refreshWidthHeightRatio() {
+    private void refreshWidthSpinnerBasedOnHeight() {
+        if (widthToHeightRatio != 0) {
+            float height = (Integer) heightSpinner.getModel().getValue();
+            int width = Math.round( widthToHeightRatio * height );
+            documentModel.width.setValue(width);
+            queueRefreshFiles();
+        }
+    }
+
+    class RefreshFilesRunnable implements Runnable {
+        public void run() {
+            if (!filesDirty || vectorImage == null)
+                return;
+            filesDirty = false;
+
+            synchronized (ExportPanel.this) {
+                int width = (Integer) widthSpinner.getModel().getValue();
+                int height = (Integer) heightSpinner.getModel().getValue();
+                BufferedImage bi = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+                Graphics2D g = bi.createGraphics();
+                g.transform(TransformUtils.createAffineTransform(vectorImage.getBounds(),
+                        new Rectangle(1, 1, width - 2,height - 2)));
+                vectorImage.paint(g);
+                g.dispose();
+
+                try {
+                    ImageIO.write(bi, "png", pngFile);
+                    SwingUtilities.invokeLater(() -> {
+                        String sizeStr = IOUtils.formatFileSize(pngFile);
+                        pngLabel.setVisible(true);
+                        pngSizeLabel.setText(sizeStr);
+
+                        // TODO:
+                        svgLabel.setVisible(false);
+                    });
+                } catch(Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    private synchronized void refreshAfterMonsterUpdate() {
         Monster monster = documentModel.monster.getValue();
         if (monster == null) {
             widthToHeightRatio = 0;
+            pngLabel.setVisible(false);
+            svgLabel.setVisible(false);
+            pngSizeLabel.setText("");
+            svgSizeLabel.setText("");
         } else {
             MonsterRenderer renderer = new MonsterRenderer(monster);
-            VectorImage vi = renderer.getImage();
-            Rectangle2D r = vi.getBounds();
+            vectorImage = renderer.getImage();
+            Rectangle2D r = vectorImage.getBounds();
             widthToHeightRatio = (float)( r.getWidth() / r.getHeight() );
             refreshHeightSpinnerBasedOnWidth();
+
+            queueRefreshFiles();
         }
     }
 
-    /**
-     * This formats a subtly off-white UI with rounded corners and a (even more subtle) one-pixel gray border.
-     * This replicates Apple's box UI. Their documentation describes a box as "a type of view that’s used to create
-     * distinct, logical groupings of controls, text fields, and other interface elements."
-     */
-    private static void formatBoxUI(QPanelUI ui) {
-        // TODO: integrate this in the pumpernickel codebase
-        ui.setCornerSize(5);
-        ui.setStrokeColor1(new Color(0, 0, 0, 30));
-        ui.setStrokeColor2(new Color(0, 0, 0, 22));
-        ui.setFillColor(new Color(0, 0, 0, 16));
+    private void queueRefreshFiles() {
+        filesDirty = true;
+        fileExecutor.execute(new RefreshFilesRunnable());
     }
 }
