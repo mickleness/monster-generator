@@ -10,6 +10,7 @@ import com.pump.monster.Monster;
 import com.pump.monster.render.MonsterRenderer;
 import com.pump.plaf.QPanelUI;
 import com.pump.swing.FileDialogUtils;
+import com.pump.swing.ImageTransferable;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -187,6 +188,11 @@ public class ExportPanel extends JPanel {
         }
     }
 
+    public void copyImage() {
+        BufferedImage bi = createImage();
+        Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new ImageTransferable(bi), null);
+    }
+
     class RefreshFilesRunnable implements Runnable {
         public void run() {
             if (!filesDirty || vectorImage == null)
@@ -194,17 +200,8 @@ public class ExportPanel extends JPanel {
             filesDirty = false;
 
             synchronized (ExportPanel.this) {
-                int width = (Integer) widthSpinner.getModel().getValue();
-                int height = (Integer) heightSpinner.getModel().getValue();
-                BufferedImage bi = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-                Graphics2D g = bi.createGraphics();
-                g.transform(TransformUtils.createAffineTransform(vectorImage.getBounds(),
-                        new Rectangle(1, 1, width - 2,height - 2)));
-                vectorImage.paint(g);
-                g.dispose();
-
                 try {
-                    ImageIO.write(bi, "png", pngFile);
+                    ImageIO.write(createImage(), "png", pngFile);
                     SwingUtilities.invokeLater(() -> {
                         String sizeStr = IOUtils.formatFileSize(pngFile);
                         pngLabel.setVisible(true);
@@ -218,6 +215,18 @@ public class ExportPanel extends JPanel {
                 }
             }
         }
+    }
+
+    private BufferedImage createImage() {
+        int width = (Integer) widthSpinner.getModel().getValue();
+        int height = (Integer) heightSpinner.getModel().getValue();
+        BufferedImage bi = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = bi.createGraphics();
+        g.transform(TransformUtils.createAffineTransform(vectorImage.getBounds(),
+                new Rectangle(1, 1, width - 2,height - 2)));
+        vectorImage.paint(g);
+        g.dispose();
+        return bi;
     }
 
     private synchronized void refreshAfterMonsterUpdate() {

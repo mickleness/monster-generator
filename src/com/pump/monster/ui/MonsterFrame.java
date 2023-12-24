@@ -1,7 +1,9 @@
 package com.pump.monster.ui;
 
+import com.pump.desktop.ExitControl;
 import com.pump.desktop.temp.TempFileManager;
 import com.pump.plaf.QPanelUI;
+import com.pump.util.JVM;
 
 import javax.swing.*;
 import java.awt.*;
@@ -25,8 +27,12 @@ public class MonsterFrame extends JFrame {
 
     JMenuBar menuBar = new JMenuBar();
     JMenu fileMenu = new JMenu("File");
+    JMenu editMenu = new JMenu("Edit");
     JMenuItem rerollMenuItem = new JMenuItem("Reroll");
-    JMenuItem saveImageMenuItem = new JMenuItem("Save Image As...");
+    JMenuItem saveImageMenuItem = new JMenuItem("Save Image As\u2026");
+    JMenuItem copyMenuItem = new JMenuItem("Copy Image");
+
+    // TODO: add undo / redo ?
 
     DocumentModel doc = new DocumentModel();
     MonsterInspector monsterInspector = new MonsterInspector(doc.monster);
@@ -36,14 +42,20 @@ public class MonsterFrame extends JFrame {
     public MonsterFrame() {
         super("Monster Generator");
         menuBar.add(fileMenu);
+        menuBar.add(editMenu);
+        editMenu.add(copyMenuItem);
         fileMenu.add(saveImageMenuItem);
         fileMenu.add(rerollMenuItem);
         saveImageMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()));
-
+        copyMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_C, Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()));
         rerollMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()));
         rerollMenuItem.addActionListener(e -> monsterInspector.reroll());
         saveImageMenuItem.addActionListener(e -> exportPanel.saveImage());
+        copyMenuItem.addActionListener(e -> exportPanel.copyImage());
         setJMenuBar(menuBar);
+
+        if (!JVM.isMac)
+            fileMenu.add(new ExitControl(true).getExitMenuItem());
 
         getContentPane().setLayout(new GridBagLayout());
 
