@@ -4,15 +4,12 @@ import java.awt.*;
 import java.util.Arrays;
 
 public class Monster {
-
-
     public static final Color PINK = new Color(0xFF7B9C);
     public static final Color YELLOW = new Color(0xFFC145);
     public static final Color TEAL = new Color(0x06AED5);
     public static final Color ORANGE = new Color(0xFAA317);
     public static final Color GREEN = new Color(0x5FAD41);
     public static final Color PURPLE = new Color(0xBAA5FF);
-
 
     public final BodyShape bodyShape;
     public final Color bodyColor;

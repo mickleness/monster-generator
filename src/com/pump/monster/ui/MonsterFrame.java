@@ -44,10 +44,11 @@ public class MonsterFrame extends JFrame {
         menuBar.add(fileMenu);
         menuBar.add(editMenu);
         editMenu.add(copyMenuItem);
+
         fileMenu.add(saveImageMenuItem);
         fileMenu.add(rerollMenuItem);
-        saveImageMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()));
         copyMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_C, Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()));
+        saveImageMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()));
         rerollMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()));
         rerollMenuItem.addActionListener(e -> monsterInspector.reroll());
         saveImageMenuItem.addActionListener(e -> exportPanel.saveImage());
@@ -59,7 +60,6 @@ public class MonsterFrame extends JFrame {
 
         getContentPane().setLayout(new GridBagLayout());
 
-
         JLabel optionsLabel = new JLabel("Options");
         JLabel exportLabel = new JLabel("Export");
         GridBagConstraints gbc = new GridBagConstraints();
@@ -69,7 +69,7 @@ public class MonsterFrame extends JFrame {
         gbc.weightx = 1;
         gbc.weighty = 1;
         gbc.gridheight = GridBagConstraints.REMAINDER;
-        gbc.insets = new Insets(3,3,3,3);
+        gbc.insets = new Insets(20,20,20,20);
         getContentPane().add(monsterPreview, gbc);
 
         gbc.gridx++;
