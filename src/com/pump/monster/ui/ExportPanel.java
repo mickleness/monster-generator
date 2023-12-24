@@ -3,7 +3,7 @@ package com.pump.monster.ui;
 import com.pump.awt.dnd.FileLabel;
 import com.pump.desktop.temp.TempFileManager;
 import com.pump.geom.TransformUtils;
-import com.pump.graphics.vector.VectorImage;
+import com.pump.graphics.vector.*;
 import com.pump.inspector.Inspector;
 import com.pump.io.IOUtils;
 import com.pump.monster.Monster;
@@ -20,6 +20,7 @@ import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
@@ -199,25 +200,56 @@ public class ExportPanel extends JPanel {
                 return;
             filesDirty = false;
 
-            synchronized (ExportPanel.this) {
-                try {
-                    ImageIO.write(createImage(), "png", pngFile);
-                    SwingUtilities.invokeLater(() -> {
-                        String sizeStr = IOUtils.formatFileSize(pngFile);
-                        pngLabel.setVisible(true);
-                        pngSizeLabel.setText(sizeStr);
+            try {
+                ImageIO.write(createImage(), "png", pngFile);
+                SwingUtilities.invokeLater(() -> {
+                    String sizeStr = IOUtils.formatFileSize(pngFile);
+                    pngLabel.setVisible(true);
+                    pngSizeLabel.setText(sizeStr);
+                });
+            } catch(Exception e) {
+                e.printStackTrace();
+            }
 
-                        // TODO:
-                        svgLabel.setVisible(false);
+            try {
+                if (writeSVG()) {
+                    SwingUtilities.invokeLater(() -> {
+                        String sizeStr = IOUtils.formatFileSize(svgFile);
+                        svgLabel.setVisible(true);
+                        svgSizeLabel.setText(sizeStr);
                     });
-                } catch(Exception e) {
-                    e.printStackTrace();
                 }
+            } catch(Exception e) {
+                e.printStackTrace();
             }
         }
     }
 
-    private BufferedImage createImage() {
+    private boolean writeSVG() throws IOException {
+        if (documentModel.monster.getValue() == null ||
+                documentModel.width.getValue() == null ||
+                documentModel.height.getValue() == null)
+            return false;
+
+        Monster monster = documentModel.monster.getValue();
+        if (monster.includeTexture)
+            monster = new Monster(monster.bodyShape, monster.bodyColor, monster.hair, false, monster.eyeNumber, monster.eyePlacement, monster.eyelid, monster.mouthShape, monster.mouthFill, monster.horn, monster.legs);
+
+        int width = documentModel.width.getValue();
+        int height = documentModel.height.getValue();
+
+        MonsterRenderer r = new MonsterRenderer(monster);
+        VectorImage img = r.getImage();
+
+        SVGWriter svgWriter = new SVGWriter();
+        try (FileOutputStream fileOut = new FileOutputStream(svgFile)) {
+            svgWriter.write(img, new Dimension(width, height), fileOut);
+        }
+
+        return true;
+    }
+
+    private synchronized BufferedImage createImage() {
         int width = (Integer) widthSpinner.getModel().getValue();
         int height = (Integer) heightSpinner.getModel().getValue();
         BufferedImage bi = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
