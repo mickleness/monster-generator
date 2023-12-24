@@ -9,6 +9,7 @@ import com.pump.io.IOUtils;
 import com.pump.monster.Monster;
 import com.pump.monster.render.MonsterRenderer;
 import com.pump.plaf.QPanelUI;
+import com.pump.swing.FileDialogUtils;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -167,6 +168,22 @@ public class ExportPanel extends JPanel {
             int width = Math.round( widthToHeightRatio * height );
             documentModel.width.setValue(width);
             queueRefreshFiles();
+        }
+    }
+
+    /**
+     * Show a file dialog to save the current image as a PNG.
+     */
+    public void saveImage() {
+        Frame frame = (Frame) SwingUtilities.getWindowAncestor(this);
+        File destFile = FileDialogUtils.showSaveDialog(frame, "Save PNG", "png");
+        if (destFile == null)
+            return;
+
+        try {
+            IOUtils.copy(pngFile, destFile);
+        } catch(IOException e) {
+            e.printStackTrace();
         }
     }
 

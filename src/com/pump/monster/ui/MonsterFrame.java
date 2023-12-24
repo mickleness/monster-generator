@@ -5,8 +5,6 @@ import com.pump.plaf.QPanelUI;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.io.IOException;
 
@@ -28,6 +26,7 @@ public class MonsterFrame extends JFrame {
     JMenuBar menuBar = new JMenuBar();
     JMenu fileMenu = new JMenu("File");
     JMenuItem rerollMenuItem = new JMenuItem("Reroll");
+    JMenuItem saveImageMenuItem = new JMenuItem("Save Image As...");
 
     DocumentModel doc = new DocumentModel();
     MonsterInspector monsterInspector = new MonsterInspector(doc.monster);
@@ -37,14 +36,13 @@ public class MonsterFrame extends JFrame {
     public MonsterFrame() {
         super("Monster Generator");
         menuBar.add(fileMenu);
+        fileMenu.add(saveImageMenuItem);
         fileMenu.add(rerollMenuItem);
+        saveImageMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()));
+
         rerollMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()));
-        rerollMenuItem.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                monsterInspector.reroll();
-            }
-        });
+        rerollMenuItem.addActionListener(e -> monsterInspector.reroll());
+        saveImageMenuItem.addActionListener(e -> exportPanel.saveImage());
         setJMenuBar(menuBar);
 
         getContentPane().setLayout(new GridBagLayout());
