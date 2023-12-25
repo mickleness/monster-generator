@@ -78,7 +78,7 @@ public class MonsterInspector extends JPanel {
 
         public final Color color;
 
-        private NamedColor(Color color) {
+        NamedColor(Color color) {
             this.color = color;
         }
 
@@ -137,8 +137,6 @@ public class MonsterInspector extends JPanel {
     };
 
     final Property<Monster> monster;
-
-    static Random random = new Random();
 
     public MonsterInspector(Property<Monster> monster) {
         super(new GridBagLayout());
@@ -260,19 +258,6 @@ public class MonsterInspector extends JPanel {
     }
 
     public void reroll() {
-        Monster m = new Monster(
-                bodyShape.getValues()[random.nextInt(bodyShape.getValues().length)],
-                color.getValues()[random.nextInt(color.getValues().length)].color,
-                hair.getValues()[random.nextInt(hair.getValues().length)],
-                includeTexture.getValues()[random.nextInt(includeTexture.getValues().length)],
-                eyeNumber.getValues()[random.nextInt(eyeNumber.getValues().length)],
-                eyePlacement.getValues()[random.nextInt(eyePlacement.getValues().length)],
-                eyelid.getValues()[random.nextInt(eyelid.getValues().length)],
-                mouthShape.getValues()[random.nextInt(mouthShape.getValues().length)],
-                mouthFill.getValues()[random.nextInt(mouthFill.getValues().length)],
-                horn.getValues()[random.nextInt(horn.getValues().length)],
-                legs.getValues()[random.nextInt(legs.getValues().length)]
-        );
-        monster.setValue(m);
+        monster.setValue(new Monster());
     }
 }

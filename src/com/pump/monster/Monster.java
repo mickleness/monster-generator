@@ -2,6 +2,7 @@ package com.pump.monster;
 
 import java.awt.*;
 import java.util.Arrays;
+import java.util.Random;
 
 public class Monster {
     public static final Color PINK = new Color(0xFF7B9C);
@@ -25,9 +26,28 @@ public class Monster {
 
     private int hashcode;
 
+    /**
+     * Create a random Monster
+     */
     public Monster() {
-        this(BodyShape.CIRCLE, Monster.PINK, Hair.NONE, false, EyeNumber.ONE, EyePlacement.NORMAL,
-                Eyelid.NONE, MouthShape.GRIN, MouthFill.NONE, Horn.NONE, Legs.NONE);
+        this(new Random());
+    }
+
+    /**
+     * Create a random Monster
+     */
+    public Monster(Random random) {
+        this(BodyShape.values()[random.nextInt(BodyShape.values().length)],
+                new Color[] {PINK, YELLOW, TEAL, ORANGE, GREEN, PURPLE}[random.nextInt(6)],
+                Hair.values()[random.nextInt(Hair.values().length)],
+                random.nextBoolean(),
+                EyeNumber.values()[random.nextInt(EyeNumber.values().length)],
+                EyePlacement.values()[random.nextInt(EyePlacement.values().length)],
+                Eyelid.values()[random.nextInt(Eyelid.values().length)],
+                MouthShape.values()[random.nextInt(MouthShape.values().length)],
+                MouthFill.values()[random.nextInt(MouthFill.values().length)],
+                Horn.values()[random.nextInt(Horn.values().length)],
+                Legs.values()[random.nextInt(Legs.values().length)] );
     }
 
     public Monster(BodyShape bodyShape, Color bodyColor, Hair hair, boolean includeTexture, EyeNumber eyeNumber, EyePlacement eyePlacement,
