@@ -9,6 +9,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.geom.Ellipse2D;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.text.NumberFormat;
@@ -16,6 +17,34 @@ import java.util.*;
 import java.util.function.Function;
 
 public class MonsterInspector extends JPanel {
+
+    private static class CircleIcon implements Icon {
+        Color color;
+
+        public CircleIcon(Color color) {
+            this.color = color;
+        }
+
+        @Override
+        public void paintIcon(Component c, Graphics g, int x, int y) {
+            Graphics2D g2 = (Graphics2D) g;
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(color);
+            g2.fill(new Ellipse2D.Float(x, y, getIconWidth() - 1, getIconHeight() - 1));
+            g2.setColor(new Color(0,0,0,100));
+            g2.draw(new Ellipse2D.Float(x, y, getIconWidth() - 1, getIconHeight() - 1));
+        }
+
+        @Override
+        public int getIconWidth() {
+            return 10;
+        }
+
+        @Override
+        public int getIconHeight() {
+            return 10;
+        }
+    }
 
     /**
      * How many possible combinations these controls can create
@@ -39,9 +68,38 @@ public class MonsterInspector extends JPanel {
         }
     }
 
+    enum NamedColor {
+        PINK(Monster.PINK),
+        ORANGE(Monster.ORANGE),
+        YELLOW(Monster.YELLOW),
+        GREEN(Monster.GREEN),
+        TEAL(Monster.TEAL),
+        PURPLE(Monster.PURPLE);
+
+        public final Color color;
+
+        private NamedColor(Color color) {
+            this.color = color;
+        }
+
+        public static NamedColor get(Color color) {
+            NamedColor returnValue = null;
+            int minDiff = 0;
+            for (NamedColor n : values()) {
+                int diff = (color.getRed() - n.color.getRed())*(color.getRed() - n.color.getRed()) +
+                    (color.getGreen() - n.color.getGreen())*(color.getGreen() - n.color.getGreen()) +
+                    (color.getBlue() - n.color.getBlue())*(color.getBlue() - n.color.getBlue());
+                if (returnValue == null || diff < minDiff) {
+                    minDiff = diff;
+                    returnValue = n;
+                }
+            }
+            return returnValue;
+        }
+    }
+
     static final MonsterEnumProperty<BodyShape> bodyShape = new MonsterEnumProperty<>("Body Shape", BodyShape.values(), BodyShape.CIRCLE, monster -> monster.bodyShape);
-    static final MonsterEnumProperty<Color> color = new MonsterEnumProperty<>("Color", new Color[]{Monster.TEAL, Monster.GREEN, Monster.ORANGE, Monster.PINK, Monster.YELLOW, Monster.PURPLE},
-            Monster.TEAL, monster -> monster.bodyColor);
+    static final MonsterEnumProperty<NamedColor> color = new MonsterEnumProperty<>("Color", NamedColor.values(), NamedColor.TEAL, monster -> NamedColor.get(monster.bodyColor) );
     static final MonsterEnumProperty<Hair> hair = new MonsterEnumProperty<>("Hair", Hair.values(), Hair.NONE, monster -> monster.hair);
     static final MonsterEnumProperty<Eyelid> eyelid = new MonsterEnumProperty<>("Eyelid", Eyelid.values(), Eyelid.NONE, monster -> monster.eyelid);
     static final MonsterEnumProperty<EyeNumber> eyeNumber = new MonsterEnumProperty<>("Eye Number", EyeNumber.values(), EyeNumber.ONE, monster -> monster.eyeNumber);
@@ -64,7 +122,7 @@ public class MonsterInspector extends JPanel {
                     return;
                 dirty = false;
 
-                Monster m = new Monster(bodyShape.getValue(), color.getValue(), hair.getValue(), includeTexture.getValue(),
+                Monster m = new Monster(bodyShape.getValue(), color.getValue().color, hair.getValue(), includeTexture.getValue(),
                         eyeNumber.getValue(), eyePlacement.getValue(), eyelid.getValue(), mouthShape.getValue(), mouthFill.getValue(),
                         horn.getValue(), legs.getValue());
                 monster.setValue(m);
@@ -85,8 +143,6 @@ public class MonsterInspector extends JPanel {
     public MonsterInspector(Property<Monster> monster) {
         super(new GridBagLayout());
         this.monster = Objects.requireNonNull(monster);
-
-        // TODO: save properties to preferences across sessions
 
         for (MonsterEnumProperty p : ALL_PROPERTIES)
             initializeProperty(p);
@@ -146,11 +202,16 @@ public class MonsterInspector extends JPanel {
         comboBox.setRenderer(new DefaultListCellRenderer() {
             @Override
             public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-                value = toString(value);
-                return super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                JLabel label = (JLabel) super.getListCellRendererComponent(list, toString(value), index, isSelected, cellHasFocus);
+                if (value instanceof NamedColor namedColor) {
+                    label.setIcon(new CircleIcon(namedColor.color));
+                }
+                return label;
             }
 
             private String toString(Object value) {
+                if (value instanceof NamedColor namedColor)
+                    value = namedColor.name();
                 String str = String.valueOf(value);
                 if (str.equalsIgnoreCase("true"))
                     return "Yes";
@@ -201,7 +262,7 @@ public class MonsterInspector extends JPanel {
     public void reroll() {
         Monster m = new Monster(
                 bodyShape.getValues()[random.nextInt(bodyShape.getValues().length)],
-                color.getValues()[random.nextInt(color.getValues().length)],
+                color.getValues()[random.nextInt(color.getValues().length)].color,
                 hair.getValues()[random.nextInt(hair.getValues().length)],
                 includeTexture.getValues()[random.nextInt(includeTexture.getValues().length)],
                 eyeNumber.getValues()[random.nextInt(eyeNumber.getValues().length)],
