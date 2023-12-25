@@ -17,8 +17,6 @@ import java.util.function.Function;
 
 public class MonsterInspector extends JPanel {
 
-    final int ROWS = 6;
-
     /**
      * How many possible combinations these controls can create
      */
@@ -54,10 +52,7 @@ public class MonsterInspector extends JPanel {
     static final MonsterEnumProperty<Boolean> includeTexture = new MonsterEnumProperty<>("Include Texture", new Boolean[]{Boolean.FALSE, Boolean.TRUE}, Boolean.TRUE, monster -> monster.includeTexture);
     static final MonsterEnumProperty<Legs> legs = new MonsterEnumProperty<>("Legs", Legs.values(), Legs.SHORT, monster -> monster.legs);
 
-    /**
-     * Each element is a column of controls
-     */
-    java.util.List<Inspector> inspectors = new LinkedList<>();
+    Inspector inspector = new Inspector();
     Map<MonsterEnumProperty, JComboBox> propertyToControlMap = new HashMap<>();
 
     PropertyChangeListener updateMonsterPCL = new PropertyChangeListener() {
@@ -83,7 +78,6 @@ public class MonsterInspector extends JPanel {
         }
     };
 
-    JButton rerollButton = new JButton("Reroll");
     final Property<Monster> monster;
 
     static Random random = new Random();
@@ -99,18 +93,16 @@ public class MonsterInspector extends JPanel {
 
         System.out.println(NumberFormat.getInstance().format(COMBINATIONS) + " possible combinations");
 
-        addToInspector(null, rerollButton);
-        rerollButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                reroll();
-            }
-        });
-
         refreshUIOptionsFromMonster();
         monster.addPropertyChangeListener(evt -> refreshUIOptionsFromMonster());
 
         reroll();
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0; gbc.gridy = 0; gbc.weightx = 1; gbc.weighty = 1;
+        gbc.fill = GridBagConstraints.NONE; gbc.anchor = GridBagConstraints.NORTHWEST;
+        add(inspector.getPanel(), gbc);
+        inspector.getPanel().setOpaque(false);
     }
 
 
@@ -191,33 +183,7 @@ public class MonsterInspector extends JPanel {
         addToInspector(label, comboBox);
     }
 
-    private int currentRow = 0;
-    private int currentColumn = 0;
     private void addToInspector(JComponent label, JComponent component) {
-        int inspectorIndex = currentColumn;
-
-        currentRow++;
-        if (currentRow == ROWS) {
-            currentRow = 0;
-            currentColumn++;
-        }
-
-        if (inspectorIndex == inspectors.size()) {
-            Inspector i = new Inspector();
-            inspectors.add(i);
-            GridBagConstraints gbc = new GridBagConstraints();
-            gbc.gridx = inspectorIndex; gbc.gridy = 0; gbc.weightx = 1; gbc.weighty = 1;
-            gbc.fill = GridBagConstraints.NONE; gbc.anchor = GridBagConstraints.NORTHWEST;
-            add(i.getPanel(), gbc);
-            i.getPanel().setOpaque(false);
-        }
-
-//        if (label != null)
-//            label.putClientProperty("JComponent.sizeVariant", "small");
-//        if (component != null)
-//            component.putClientProperty("JComponent.sizeVariant", "small");
-
-        Inspector inspector = inspectors.get(inspectorIndex);
         if (label != null) {
             inspector.addRow(label, component);
         } else {

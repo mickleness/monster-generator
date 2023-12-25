@@ -18,26 +18,25 @@ import java.util.Objects;
 
 public class MonsterPreview extends JComponent {
 
-    final Property<Monster> monsterProperty;
+    final DocumentModel docModel;
 
-    public MonsterPreview(Property<Monster> monsterProperty) {
-        this.monsterProperty = Objects.requireNonNull(monsterProperty);
+    public MonsterPreview(DocumentModel docModel) {
+        this.docModel = Objects.requireNonNull(docModel);
 
         setPreferredSize(new Dimension(200, 200));
         setBorder(new EmptyBorder(4,4,4,4));
 
-        monsterProperty.addPropertyChangeListener(new PropertyChangeListener() {
-            @Override
-            public void propertyChange(PropertyChangeEvent evt) {
-                repaint();
-            }
-        });
+
+        PropertyChangeListener pcl = evt -> repaint();
+        docModel.monster.addPropertyChangeListener(pcl);
+        docModel.width.addPropertyChangeListener(pcl);
+        docModel.height.addPropertyChangeListener(pcl);
     }
 
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
-        Monster monster = monsterProperty.getValue();
+        Monster monster = docModel.monster.getValue();
 
         if (monster == null)
             return;
@@ -53,7 +52,11 @@ public class MonsterPreview extends JComponent {
         compSize.width -= i.left + i.right;
         compSize.height -= i.top + i.bottom;
 
-        Dimension scaledSize = Dimension2D.scaleProportionally(r.getBounds().getSize(), compSize);
+        Dimension maxSize = new Dimension(compSize);
+        maxSize.width = Math.min(maxSize.width, docModel.width.getValue());
+        maxSize.height = Math.min(maxSize.height, docModel.height.getValue());
+
+        Dimension scaledSize = Dimension2D.scaleProportionally(r.getBounds().getSize(), maxSize);
         AffineTransform tx = TransformUtils.createAffineTransform(r, new Rectangle(
                 i.left + compSize.width / 2 - scaledSize.width / 2,
                 i.top + compSize.height / 2 - scaledSize.height / 2,

@@ -52,8 +52,9 @@ public class MonsterFrame extends JFrame {
 
     DocumentModel doc = new DocumentModel();
     MonsterInspector monsterInspector = new MonsterInspector(doc.monster);
-    MonsterPreview monsterPreview = new MonsterPreview(doc.monster);
+    MonsterPreview monsterPreview = new MonsterPreview(doc);
     ExportPanel exportPanel = new ExportPanel(doc);
+    JButton rerollButton = new JButton("Reroll");
 
     public MonsterFrame() {
         super("Monster Generator v" + VERSION);
@@ -81,34 +82,21 @@ public class MonsterFrame extends JFrame {
 
         JLabel optionsLabel = new JLabel("Options");
         JLabel exportLabel = new JLabel("Export");
+
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.fill = GridBagConstraints.BOTH;
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        gbc.weightx = 1;
-        gbc.weighty = 1;
-        gbc.gridheight = GridBagConstraints.REMAINDER;
-        gbc.insets = new Insets(20,20,20,20);
-        getContentPane().add(monsterPreview, gbc);
-
-        gbc.gridx++;
-        gbc.weightx = 0; gbc.gridheight = 1; gbc.weighty = 0;
-        gbc.insets = new Insets(20,20,3,20);
-        getContentPane().add(optionsLabel, gbc);
-        gbc.insets = new Insets(3,20,3,20);
-        gbc.gridy++;
-        getContentPane().add(monsterInspector, gbc);
-        gbc.insets = new Insets(20,20,3,20);
-        gbc.gridy++;
-        getContentPane().add(exportLabel, gbc);
-        gbc.gridy++;
-        gbc.insets = new Insets(3,20,20,20);
-        getContentPane().add(exportPanel, gbc);
+        gbc.gridx = 0; gbc.gridy = 0;
+        gbc.weightx = 0; gbc.weighty = 0;
+        gbc.fill = GridBagConstraints.NONE; gbc.gridheight = 2;
+        gbc.insets = new Insets(10, 10, 10, 10); gbc.anchor = GridBagConstraints.NORTHWEST;
+        getContentPane().add(createLabeledPanel(optionsLabel, monsterInspector, rerollButton), gbc);
         gbc.gridy++; gbc.weighty = 1;
-        gbc.insets = new Insets(0,0,0,0);
-        getContentPane().add(Box.createVerticalBox(), gbc);
+        getContentPane().add(Box.createVerticalGlue());
 
-        optionsLabel.setLabelFor(monsterInspector);
+        gbc.gridx++; gbc.gridheight = 1; gbc.gridy = 0; gbc.weighty = 0; gbc.anchor = GridBagConstraints.NORTHWEST;
+        getContentPane().add(createLabeledPanel(exportLabel, exportPanel, null), gbc);
+        gbc.weightx = 1;
+        gbc.gridy++; gbc.weighty = 1; gbc.gridheight = GridBagConstraints.REMAINDER; gbc.fill = GridBagConstraints.BOTH;
+        getContentPane().add(monsterPreview, gbc);
 
         gbc.gridx++;
 
@@ -116,6 +104,27 @@ public class MonsterFrame extends JFrame {
 
         updateTaskbarIcon();
         updateAboutMenu();
+
+        rerollButton.addActionListener(e -> monsterInspector.reroll());
+    }
+
+    private JPanel createLabeledPanel(JLabel label, JComponent panel, JComponent rightButton) {
+        JPanel p = new JPanel(new GridBagLayout());
+        GridBagConstraints c = new GridBagConstraints();
+        c.gridx = 0; c.gridy = 0; c.weightx = 1; c.weighty = 0;
+        c.insets = new Insets(3,3,3,3);
+        c.anchor = GridBagConstraints.WEST;
+        p.add(label, c);
+        c.gridx++;
+        c.anchor = GridBagConstraints.EAST;
+        if (rightButton != null)
+            p.add(rightButton, c);
+        c.gridy++; c.gridx = 0; c.gridwidth = GridBagConstraints.REMAINDER; c.weightx = 1; c.weighty = 1;
+        c.fill = GridBagConstraints.BOTH;
+        p.add(panel, c);
+
+        label.setLabelFor(panel);
+        return p;
     }
 
     private void updateAboutMenu() {

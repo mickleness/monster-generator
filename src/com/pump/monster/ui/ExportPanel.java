@@ -58,6 +58,8 @@ public class ExportPanel extends JPanel {
 
         inspector.addRow(widthLabel, widthSpinner);
         inspector.addRow(heightLabel, heightSpinner);
+        inspector.addRow(createFlowLayout(pngLabel, pngSizeLabel), false);
+        inspector.addRow(createFlowLayout(svgLabel, svgSizeLabel), false);
 
         setLayout(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
@@ -65,24 +67,8 @@ public class ExportPanel extends JPanel {
         gbc.anchor = GridBagConstraints.WEST;
         add(inspector.getPanel(), gbc);
 
-        JPanel filePanel = new JPanel(new GridBagLayout());
-        gbc.gridx++; gbc.insets.left = 30;
-        add(filePanel, gbc);
-
         gbc.gridx++; gbc.weightx = 1;
         add(Box.createHorizontalGlue(), gbc);
-
-        gbc = new GridBagConstraints();
-        gbc.gridx = 0; gbc.gridy = 0; gbc.weightx = 1; gbc.weighty = 1;
-        gbc.insets = new Insets(3,3,3,3);
-        filePanel.add(pngLabel, gbc);
-        gbc.gridy++;
-        filePanel.add(svgLabel, gbc);
-        gbc.gridx++; gbc.gridy--;
-        filePanel.add(pngSizeLabel, gbc);
-        gbc.gridy++;
-        filePanel.add(svgSizeLabel, gbc);
-        filePanel.setOpaque(false);
 
         Color c = pngSizeLabel.getForeground();
         c = new Color(c.getRed(), c.getGreen(), c.getBlue(), c.getAlpha() * 80 / 255);
@@ -153,6 +139,18 @@ public class ExportPanel extends JPanel {
 
         pngLabel.setFile(pngFile);
         svgLabel.setFile(svgFile);
+
+        pngLabel.setToolTipText("Click and drag this file to export your monster as a PNG image.");
+        svgLabel.setToolTipText("Click and drag this file to export your monster as an SVG image.");
+    }
+
+    private JPanel createFlowLayout(JComponent... components) {
+        JPanel panel = new JPanel(new FlowLayout());
+        panel.setOpaque(false);
+        for(JComponent component : components) {
+            panel.add(component);
+        }
+        return panel;
     }
 
     private void refreshHeightSpinnerBasedOnWidth() {
