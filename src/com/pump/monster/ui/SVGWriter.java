@@ -19,7 +19,7 @@ import java.util.Map;
  * This converts VectorImages to SVGs. It is only intended to support the bare minimum for
  * this monster-generator project. We can add to it as needed, but we don't want to overengineer it.
  */
-class SVGWriter {
+public class SVGWriter {
     public void write(VectorImage vectorImage, Dimension exportSize, OutputStream out) {
         try (PrintStream ps = new PrintStream(out)) {
             ps.println("<?xml version=\"1.0\" encoding=\"iso-8859-1\"?>");
