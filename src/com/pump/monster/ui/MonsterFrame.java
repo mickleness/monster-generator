@@ -19,7 +19,7 @@ import java.net.URL;
 
 public class MonsterFrame extends JFrame {
 
-    private static final String VERSION = "1.0";
+    public static final String VERSION = "1.0";
 
     public static void main(String[] args) throws IOException {
         System.setProperty("apple.laf.useScreenMenuBar", "true");
@@ -30,13 +30,10 @@ public class MonsterFrame extends JFrame {
         app.setCopyright(2023, "Jeremy Wood");
         app.setURL(new URL("https://github.com/mickleness/monster-generator/"));
 
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                MonsterFrame m = new MonsterFrame();
-                m.pack();
-                m.setVisible(true);
-            }
+        SwingUtilities.invokeLater(() -> {
+            MonsterFrame m = new MonsterFrame();
+            m.pack();
+            m.setVisible(true);
         });
     }
 
@@ -44,8 +41,8 @@ public class MonsterFrame extends JFrame {
     JMenu fileMenu = new JMenu("File");
     JMenu editMenu = new JMenu("Edit");
     JMenuItem rerollMenuItem = new JMenuItem("Reroll");
-    JMenuItem savePNGMenuItem = new JMenuItem("Save PNG As\u2026");
-    JMenuItem saveSVGMenuItem = new JMenuItem("Save SVG As\u2026");
+    JMenuItem savePNGMenuItem = new JMenuItem("Save PNG As…");
+    JMenuItem saveSVGMenuItem = new JMenuItem("Save SVG As…");
     JMenuItem copyMenuItem = new JMenuItem("Copy Image");
 
     // TODO: add undo / redo ?
@@ -154,7 +151,6 @@ public class MonsterFrame extends JFrame {
                 Legs.NONE );
         MonsterRenderer renderer = new MonsterRenderer(monster);
         VectorImage vectorImage = renderer.getImage();
-        BufferedImage bi = vectorImage.toBufferedImage();
-        return bi;
+        return vectorImage.toBufferedImage();
     }
 }
