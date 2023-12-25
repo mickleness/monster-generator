@@ -63,8 +63,8 @@ class SVGWriter {
 
                         ps.println("\t\t<linearGradient id=\"" + id  +"\" " +
                                 "x1=\"" + p1.getX() + "\" y1=\"" + p1.getY() + "\" x2=\"" + p2.getX() + "\" y2=\"" + p2.getY() + "\">");
-                        String color1str = toString(gradientPaint.getColor1(), false);
-                        String color2str = toString(gradientPaint.getColor2(), false);
+                        String color1str = toRGBHexString(gradientPaint.getColor1());
+                        String color2str = toRGBHexString(gradientPaint.getColor2());
                         float alpha1 = gradientPaint.getColor1().getAlpha();
                         float alpha2 = gradientPaint.getColor2().getAlpha();
                         String opacity1str = alpha1 == 255f ? "1" : Float.toString( alpha1 / 255f );
@@ -92,14 +92,17 @@ class SVGWriter {
                     String fillruleStr = shape.getPathIterator(null).getWindingRule() == PathIterator.WIND_EVEN_ODD ? "evenodd" : "nonzero";
                     String fillStr;
                     String paintID = paintDefinitions.get(paint);
+                    String fillOpacityStr = "1";
                     if (paintID != null) {
                         fillStr = "url(#" + paintID + ")";
                     } else if (paint instanceof Color color) {
-                        fillStr = toString(color, true);
+                        fillStr = toRGBHexString(color);
+                        if (color.getAlpha() < 255)
+                            fillOpacityStr = Float.toString( ((float)(color.getAlpha())) / 255f );
                     } else {
                         throw new UnsupportedOperationException(paint.toString());
                     }
-                    ps.println("\t\t<path style=\"fill-rule:" + fillruleStr + ";fill:" + fillStr + ";\" d=\"" + pathStr + "\"/>");
+                    ps.println("\t\t<path style=\"fill-rule:" + fillruleStr + ";fill:" + fillStr + ";fill-opacity:" + fillOpacityStr + ";\" d=\"" + pathStr + "\"/>");
                 } else {
                     throw new UnsupportedOperationException(op.getClass().getName() + " " + op);
                 }
@@ -136,14 +139,14 @@ class SVGWriter {
         }
     }
 
-    private String toString(Color color, boolean includeAlpha) {
+    /**
+     * @return an RGB hex code like "#fe10da" or "#001fc8"
+     */
+    private String toRGBHexString(Color color) {
         String str = Integer.toUnsignedString(color.getRGB(), 16);
         while (str.length() < 8)
             str = "0" + str;
         // put alpha at end
-        str = str.substring(2, 8) + str.substring(0, 2);
-        if (str.endsWith("FF") || !includeAlpha)
-            return "#" + str.substring(0, 6);
-        return "#" + str;
+        return "#" + str.substring(2, 8);
     }
 }
